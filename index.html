@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconocimiento Facial - Sistema Completo</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        #startBtn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        #startBtn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        #stopBtn {
+            background: #f44336;
+            color: white;
+        }
+
+        #stopBtn:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        #stopBtn:disabled,
+        #startBtn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .video-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+        }
+
+
+        #video {
+            display: block;
+            width: 720px;
+            height: 560px;
+            background: #000;
+            object-fit: cover;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.ready {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .info-box h4 {
+            color: #1976D2;
+            margin-bottom: 8px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #333;
+        }
+
+        .info-box li {
+            margin: 5px 0;
+        }
+
+        @media (max-width: 768px) {
+            #video {
+                width: 100%;
+                height: auto;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .container {
+                padding: 20px;
+            }
+        }
+
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🎭 Sistema de Reconocimiento Facial</h1>
+        <p>Detección en tiempo real con IA | Edad, Género y Expresiones</p>
+    </header>
+
+    <div class="container">
+        <div class="controls">
+            <button id="startBtn">▶ Iniciar Cámara</button>
+            <button id="stopBtn" disabled>⏹ Detener</button>
+        </div>
+
+        <div id="statusDiv" class="status loading">
+            <div class="loader"></div>
+            <p>Cargando modelos de IA...</p>
+        </div>
+
+        <div class="video-container" style="display: none;">
+            <video id="video" autoplay muted playsinline></video>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Rostros Detectados</h3>
+                <div class="value" id="faceCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>FPS Promedio</h3>
+                <div class="value" id="fps">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Confianza Promedio</h3>
+                <div class="value" id="confidence">0%</div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h4>ℹ️ Información del Sistema</h4>
+            <ul>
+                <li><strong>Detección de rostros:</strong> Algoritmo TinyFaceDetector</li>
+                <li><strong>68 puntos faciales:</strong> Landmarks para seguimiento preciso</li>
+                <li><strong>Expresiones:</strong> Feliz, Triste, Enojado, Sorprendido, Neutral, etc.</li>
+                <li><strong>Edad y Género:</strong> Estimación mediante redes neuronales</li>
+                <li><strong>Privacidad:</strong> Todo el procesamiento es local, en tu navegador</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
